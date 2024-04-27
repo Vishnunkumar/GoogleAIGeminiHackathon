@@ -10,7 +10,6 @@ st.markdown("*A streamlit app leveraging Google Gemini API in the backend to hel
 st.subheader("Commit Message Classifier", divider="green")
 
 gemini_api_key = st.text_input("Gemini API Key", type="password")
-github_repo = st.text_input("Github Repo")
 github_token = st.text_input("Gitlab Access Token", type="password")
 
 init_button = st.button("Save session")
@@ -21,6 +20,5 @@ if __name__ == "__main__":
         with st.spinner("Gemini Session Creation"):
             st.session_state.gemini_api_key = gemini_api_key
             st.session_state.github_token = github_token
-            st.session_state.github_repo = github_repo
-        st.success("Session Creation Complete")
+        st.success("Session Creation Complete, Please head over to the other pages to try out the different features")
 
