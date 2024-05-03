@@ -8,9 +8,10 @@ st.markdown("*A streamlit app leveraging Google Gemini API in the backend to hel
             " get through the hard hustles of coding*")
 
 st.subheader("Commit Message Classifier", divider="green")
+st.markdown("**Get your Gemini AI and Github Tokens from respective websites and provide them below**")
 
 gemini_api_key = st.text_input("Gemini API Key", type="password")
-github_token = st.text_input("Gitlab Access Token", type="password")
+github_token = st.text_input("Github Access Token", type="password")
 
 init_button = st.button("Save session")
 
