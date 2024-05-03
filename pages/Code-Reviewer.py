@@ -56,7 +56,7 @@ def github_session(github_token):
     return g
 
 
-get_review_button = st.button("Get review comment for the latest pull request")
+get_review_button = st.button("Get review comment for the latest open pull request")
 
 if get_review_button:
     with st.spinner("Gemini Session Creation"):
@@ -69,14 +69,19 @@ if get_review_button:
 
     with st.spinner("Getting the latest pull request"):
         git_repo = github_sess.get_repo(github_repo)
-        pull_req = git_repo.get_pulls()[0]
+        try:
+            pull_req = git_repo.get_pulls(state="open")[0]
+        except IndexError:
+            raise ValueError("Try with only open PRs for now")
         diff_content = requests.get(pull_req.diff_url).text
 
     with st.spinner("Generating the review"):
         message_template = """Given is the diff of the pull request of code: {code_block}. 
-        By using the diff syntax review the code and provide generic comments. Make sure the 
-        review comments follow the best practices and optimzations. Mention the line number,
-        method and the variable name while providing the comment""".format(code_block=diff_content)
+        By using the diff syntax review the code and provide breif comments. 
+        Make sure the review comments follow the best practices and optimzations.
+        Mention the line number, method and the variable name while providing the comment
+        Clearly mention the bugs if anything found
+        Properly mention the changes in the functions and classes and their lines respectively""".format(code_block=diff_content)
         response = gem_model.generate_content(message_template)
         st.markdown("**Generated Code Review**")
         st.success(response.candidates[0].content.parts[0].text)
