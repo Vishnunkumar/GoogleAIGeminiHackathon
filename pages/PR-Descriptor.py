@@ -9,7 +9,8 @@ st.markdown("*Creates a description which can be used when creating a pull reque
 st.subheader("Pull Request Descriptor", divider="green")
 
 github_repo = st.text_input("Github Repo, Eg: google/vision i.e organisation/project")
-feature_branch_name = st.text_input("Feature Branch Name (Optional)", key = "feature_branch_name")
+target_branch_name = st.text_input("Target Branch Name", key = "target_branch_name")
+feature_branch_name = st.text_input("Feature Branch Name", key = "feature_branch_name")
 
 gemini_api_key = st.session_state.get("gemini_api_key")
 github_token = st.session_state.get("github_token")
@@ -71,10 +72,14 @@ if init_button:
     with st.spinner("Analyzing changes between branches"):
         try:
             github_repo = github_sess.get_repo(github_repo)
-            # Get content from HEAD of main branch
-            main_branch_commit_last = github_repo.get_commit("HEAD")
-            main_branch_sha = main_branch_commit_last.sha
-            # Get content from HEAD (latest commit) of feature branch (if provided)
+            # Get content from HEAD of target branch (assumes target branch as main by default)
+            if target_branch_name:
+                target_branch_commit_last = github_repo.get_commit(target_branch_name)
+            else:
+                target_branch_commit_last = github_repo.get_commit("HEAD")
+            target_branch_sha = target_branch_commit_last.sha
+
+            # Get content from HEAD (latest commit) of feature branch
             if feature_branch_name:
                 feature_branch_commit_last = github_repo.get_commit(feature_branch_name)
                 feature_branch_sha = feature_branch_commit_last.sha
@@ -83,11 +88,11 @@ if init_button:
                 feature_branch_commit_last = None
 
             # Analyze diff (if feature branch provided)
-            repo_compare = github_repo.compare(main_branch_sha, feature_branch_sha)
+            repo_compare = github_repo.compare(target_branch_sha, feature_branch_sha)
             diff_content = requests.get(repo_compare.diff_url).content
 
             short_description = f"""This pull request introduces changes from commit {feature_branch_sha} in branch {feature_branch_name}.
-            The latest commit on the main branch is {main_branch_sha}.
+            The latest commit on the main branch is {target_branch_sha}.
             """
             st.markdown("**Short Pull Request Description**")
             st.success(short_description)
