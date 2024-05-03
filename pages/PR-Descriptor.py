@@ -9,6 +9,7 @@ st.markdown("*Creates a description which can be used when creating a pull reque
 st.subheader("Pull Request Descriptor", divider="green")
 
 github_repo = st.text_input("Github Repo, Eg: google/vision i.e organisation/project")
+feature_branch_name = st.text_input("Feature Branch Name (Optional)", key = "feature_branch_name")
 
 gemini_api_key = st.session_state.get("gemini_api_key")
 github_token = st.session_state.get("github_token")
@@ -67,40 +68,41 @@ if init_button:
         github_sess = github_session(github_token)
     st.success("Github session created")
 
-    with st.spinner("Getting all commits"):
-        git_repo = github_sess.get_repo(github_repo)
-        all_commits = list(git_repo.get_commits())
+    with st.spinner("Analyzing changes between branches"):
+        try:
+            github_repo = github_sess.get_repo(github_repo)
+            # Get content from HEAD of main branch
+            main_branch_commit_last = github_repo.get_commit("HEAD")
+            main_branch_sha = main_branch_commit_last.sha
+            # Get content from HEAD (latest commit) of feature branch (if provided)
+            if feature_branch_name:
+                feature_branch_commit_last = github_repo.get_commit(feature_branch_name)
+                feature_branch_sha = feature_branch_commit_last.sha
+            else:
+                st.warning("No feature branch name provided, cannot compare with main branch.")
+                feature_branch_commit_last = None
 
-  # Initialize variables for summary
-modified_files = set()
-added_functionality = []
-fixed_bugs = []
-performance_improvements = []
-updated_documentation = []
+            # Analyze diff (if feature branch provided)
+            repo_compare = github_repo.compare(main_branch_sha, feature_branch_sha)
+            diff_content = requests.get(repo_compare.diff_url).content
 
-for commit in all_commits:
-    # Analyze each commit
-    diff_content = requests.get(commit.diff_url).content
-    parsed_diff = PatchSet(diff_content)
+            short_description = f"""This pull request introduces changes from commit {feature_branch_sha} in branch {feature_branch_name}.
+            The latest commit on the main branch is {main_branch_sha}.
+            """
+            st.markdown("**Short Pull Request Description**")
+            st.success(short_description)
 
-    # Extract information from the diff
-    for file in parsed_diff:
-      modified_files.add(file.path)
-      for hunk in file:
-        if hunk.is_added:
-          added_functionality.append(f"{commit.sha} ({hunk.source_start_line}:{hunk.source_end_line})")
-        #  For bug fixes and performance improvements, you can use heuristics or rules based on commit messages or comments
-        #  This is a simplified example
+            with st.spinner("Generating a description for the pull request based on changes"):
+                message_template = """Analyze the provided diff "{diff_content}" for the pull request on branch "{feature_branch_name}" (commit: {feature_branch_sha}). 
+                Focus on the files that have been modified and identify the key changes introduced. 
+                Take into account the surrounding code (functions, classes) to understand the context and impact of these changes. 
+                Highlight both additions and deletions within the modified files, and explain their purpose in a clear and concise manner. 
+                Generate a pull request description using simple and concise language that accurately reflects the technical changes in the diff.""".format(diff_content=diff_content, feature_branch_name=feature_branch_name, feature_branch_sha=feature_branch_sha)
+                
+                gemini_response = gem_model.generate_content(message_template)
 
-  # Summarize changes based on extracted information
-summary_of_changes = ""
-if modified_files:
-    summary_of_changes += f"* Modified files: {', '.join(modified_files)}\n"
-if added_functionality:
-    summary_of_changes += f"* Added functionality (commits: {', '.join(added_functionality[:3])})...\n"  # Show only first 3 for brevity
-if fixed_bugs:
-    summary_of_changes += f"* Fixed bugs related to ... (commits: {', '.join(fixed_bugs[:3])})...\n"
-if performance_improvements:
-    summary_of_changes += f"* Improved performance of ... (commits: {', '.join(performance_improvements[:3])})...\n"
-if updated_documentation:
-    summary_of_changes += f"* Updated documentation for {', '.join(updated_documentation[:3])} (commits: {', '.join(updated_documentation[:3])})...\n"
+                st.markdown("**Detailed Pull Request Description**")
+                st.success(gemini_response.candidates[0].content.parts[0].text)
+
+        except Exception as e:
+            st.error(f"Error analyzing changes: {e}")
