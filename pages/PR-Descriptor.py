@@ -83,6 +83,8 @@ if init_button:
             if feature_branch_name:
                 feature_branch_commit_last = github_repo.get_commit(feature_branch_name)
                 feature_branch_sha = feature_branch_commit_last.sha
+            
+            # Get content since main branch not provided
             else:
                 st.warning("No feature branch name provided, cannot compare with main branch.")
                 feature_branch_commit_last = None
@@ -91,11 +93,12 @@ if init_button:
             repo_compare = github_repo.compare(target_branch_sha, feature_branch_sha)
             diff_content = requests.get(repo_compare.diff_url).content
 
-            short_description = f"""This pull request introduces changes from commit {feature_branch_sha} in branch {feature_branch_name}.
-            The latest commit on the main branch is {target_branch_sha}.
-            """
-            st.markdown("**Short Pull Request Description**")
-            st.success(short_description)
+            # # Generating a short description without Google Gemini
+            # short_description = f"""This pull request introduces changes from commit {feature_branch_sha} in branch {feature_branch_name}.
+            # The latest commit on the main branch is {target_branch_sha}.
+            # """
+            # st.markdown("**Short Pull Request Description**")
+            # st.success(short_description)
 
             with st.spinner("Generating a description for the pull request based on changes"):
                 message_template = """Analyze the provided diff "{diff_content}" for the pull request on branch "{feature_branch_name}" (commit: {feature_branch_sha}). 
