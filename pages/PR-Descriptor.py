@@ -61,7 +61,7 @@ def github_session(github_token):
 init_button = st.button("Generate Pull Request Description")
 
 if init_button:
-    with st.spinner("Gemini Session Creation"):
+    with st.spinner("Gemini Session Creation in progress"):
         gem_model = load_model()
     st.success("Gemini API Session Created")
 
@@ -84,7 +84,7 @@ if init_button:
                 feature_branch_commit_last = github_repo.get_commit(feature_branch_name)
                 feature_branch_sha = feature_branch_commit_last.sha
             
-            # Get content since main branch not provided
+            # Feature branch name is not provided
             else:
                 st.warning("No feature branch name provided, cannot compare with main branch.")
                 feature_branch_commit_last = None
