@@ -7,7 +7,7 @@ st.title("Code Buddy")
 st.markdown("*A streamlit app leveraging Google Gemini API in the backend to help"
             " get through the hard hustles of coding*")
 
-st.subheader("Commit Message Classifier", divider="green")
+st.subheader("Session Creation", divider="green")
 st.markdown("**Get your Gemini AI and Github Tokens from respective websites and provide them below**")
 
 gemini_api_key = st.text_input("Gemini API Key", type="password")
